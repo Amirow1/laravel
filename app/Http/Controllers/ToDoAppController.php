@@ -13,30 +13,26 @@ class ToDoAppController extends Controller
         ];
     public function index()
     {
-        $tasks = Task::all()->groupBy('list_title');
-        return view('todoapp.todoapp', compact('tasks'));
+        $tasks = Task::with('children')->get();
+
+        return view('index', compact('tasks'));
     }
     public function store(Request $request)
     {
         $request->validate([
             'discreaption' => 'required',
-            'list_title' => 'required',
             'progress' => 'nullable|integer|min:0|max:100',
         ]);
-
-        // یافتن تسکی که دسکریپشنش برابر با list_title باشه
-        $possibleParent = Task::where('discreaption', $request->list_title)->first();
 
         $task = Task::create([
             'discreaption' => $request->discreaption,
             'list_title' => $request->list_title,
             'progress' => $request->progress,
             'complete' => $request->progress == 100 ? 1 : 0,
-            'parent_id' => $possibleParent?->id, // اگر یافت نشد null میشه
+            'parent_id' => $request->parent_id,
         ]);
 
         $this->updateParentProgress($task);
-        $this->updateChildrenProgress($task);
 
         return redirect()->route('todo.index');
     }
@@ -64,7 +60,6 @@ class ToDoAppController extends Controller
         $task->update($validated);
 
         $this->updateParentProgress($task);
-        $this->updateChildrenProgress($task);
 
         return redirect()->route('todo.index');
     }
@@ -77,33 +72,21 @@ class ToDoAppController extends Controller
 
     private function updateParentProgress(Task $task)
     {
-        if ($task->parent) {
-            $children = $task->parent->children;
-            $total = $children->count();
-            if ($total > 0) {
-                $avgProgress = (int) round($children->avg('progress'));
+        if ($task->parent_id) {
+            $parent = Task::with('children')->find($task->parent_id); // والد و فرزندانش را از DB لود کن
+
+            if ($parent && $parent->children->count() > 0) {
+                $avgProgress = (int) round($parent->children->avg('progress'));
                 $complete = $avgProgress === 100 ? 1 : 0;
-                $task->parent->update([
+
+                $parent->update([
                     'progress' => $avgProgress,
                     'complete' => $complete,
                 ]);
-                $this->updateParentProgress($task->parent);
+
+                // بازگشتی برای به‌روزرسانی والد والد
+                $this->updateParentProgress($parent);
             }
         }
-    }
-
-    private function updateChildrenProgress(Task $task)
-    {
-        if ($task->children->count() > 0) {
-            foreach ($task->children as $child) {
-                $child->update([
-                    'progress' => $task->progress,
-                    'complete' => $task->progress === 100 ? 1 : 0,
-                ]);
-                $this->updateChildrenProgress($child);
-            }
-        }
-    }
-
-    
+    }    
 }

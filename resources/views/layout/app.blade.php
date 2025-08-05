@@ -11,8 +11,6 @@
     <nav>
         <a href="{{ route('home') }}">Home</a>
         <a href="{{ route('todo.index') }}">To do</a>
-        <a href="{{ route('blog.index') }}">Blog</a>
-        <a href="{{ route('setting.index') }}">setting</a>
     </nav>
     
     @yield('content')
