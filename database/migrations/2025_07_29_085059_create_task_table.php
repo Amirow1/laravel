@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tasks'); // 🔧 اصلاح نام از Todo به tasks
+        Schema::dropIfExists('tasks'); 
     }
 };

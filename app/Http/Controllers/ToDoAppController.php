@@ -14,7 +14,6 @@ class ToDoAppController extends Controller
     public function index()
     {
         $tasks = Task::with('children')->get();
-
         return view('index', compact('tasks'));
     }
     public function store(Request $request)
@@ -33,6 +32,7 @@ class ToDoAppController extends Controller
         ]);
 
         $this->updateParentProgress($task);
+        $this->updateChildrenProgress($task);
 
         return redirect()->route('todo.index');
     }
@@ -55,11 +55,13 @@ class ToDoAppController extends Controller
             'progress' => 'required|integer|min:0|max:100',
         ]);
 
-        $validated['complete'] = $validated['progress'] === 100 ? 1 : 0;
+        $validated['complete'] = intval($validated['progress']) === 100 ? 1 : 0;
 
         $task->update($validated);
 
         $this->updateParentProgress($task);
+
+        $this->updateChildrenProgress($task);
 
         return redirect()->route('todo.index');
     }
@@ -84,9 +86,21 @@ class ToDoAppController extends Controller
                     'complete' => $complete,
                 ]);
 
-                // بازگشتی برای به‌روزرسانی والد والد
                 $this->updateParentProgress($parent);
             }
         }
     }    
+
+    private function updateChildrenProgress(Task $task)
+    {
+        if ($task->children->count() > 0) {
+            foreach ($task->children as $child) {
+                $child->update([
+                    'progress' => $task->progress,
+                    'complete' => $task->progress === 100 ? 1 : 0,
+                ]);
+                $this->updateChildrenProgress($child);
+            }
+        }
+    }
 }

@@ -32,10 +32,10 @@
                 echo '<button class="btn-down" type="submit">Complete</button>';
                 echo '</form>';
             } else {
-                echo '✅ Completed';
+                echo '<p style="color: green"> Completed </p>';
             }
 
-            // نمایش فرزندان (بازگشتی)
+            // cilde show
             if ($task->children->count() > 0) {
                 renderTasks($task->children);
             }
@@ -46,7 +46,7 @@
     }
     @endphp
 
-    {{-- نمایش ریشه‌ها (تسک‌هایی که والد ندارند) --}}
+    {{-- no parents task --}}
     @php
     $rootTasks = $tasks->whereNull('parent_id');
     renderTasks($rootTasks);
@@ -55,7 +55,7 @@
 
 <hr>
 
-{{-- فرم افزودن تسک جدید --}}
+{{-- new task form --}}
 @if ($errors->any())
     <ul style="color: red;">
         @foreach ($errors->all() as $error)
